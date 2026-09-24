@@ -1,0 +1,97 @@
+Sub CleanAndOrganizeData()
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim cell As Range
+    
+    ' Set active worksheet (change "Sheet1" if your sheet name is different)
+    Set ws = ActiveSheet
+    
+    ' Speed up code execution
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+
+    '--------------------------------------------------------------------
+    ' STEP 1: Convert text to numbers for Column A and Column N
+    '--------------------------------------------------------------------
+    ' Process Column A
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+    For Each cell In ws.Range("A2:A" & lastRow)
+        If IsNumeric(cell.Value) And Trim(cell.Value) <> "" Then
+            cell.Value = CDbl(cell.Value)
+        End If
+    Next cell
+    
+    ' Process Column N
+    lastRow = ws.Cells(ws.Rows.Count, "N").End(xlUp).Row
+    For Each cell In ws.Range("N2:N" & lastRow)
+        If IsNumeric(cell.Value) And Trim(cell.Value) <> "" Then
+            cell.Value = CDbl(cell.Value)
+        End If
+    Next cell
+
+    '--------------------------------------------------------------------
+    ' STEP 2: Delete Columns D, E, and G
+    ' (Deleting right-to-left to prevent shifting errors)
+    '--------------------------------------------------------------------
+    ws.Columns("G").Delete
+    ws.Columns("E").Delete
+    ws.Columns("D").Delete
+
+    '--------------------------------------------------------------------
+    ' STEP 3: Remove duplicates based on Columns A, F, K, and L
+    ' Note: Due to step 2's column deletions, original columns shifted:
+    ' Original F -> now Column D
+    ' Original K -> now Column H
+    ' Original L -> now Column I
+    '--------------------------------------------------------------------
+    ' Find new last row across the used range
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+    
+    ' Removes duplicates using Columns A, D, H, and I (1, 4, 8, 9)
+    ws.Range("A1").CurrentRegion.RemoveDuplicates _
+        Columns:=Array(1, 4, 8, 9), Header:=xlYes
+
+    '--------------------------------------------------------------------
+    ' STEP 4: Sort Column E so priority countries appear at the top
+    ' (CU, IR, KP, RU, BY, VE, NI, UA)
+    ' Priority list: CU=1, IR=2, KP=3, RU=4, BY=5, VE=6, NI=7, UA=8, Others=9
+    '--------------------------------------------------------------------
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+    
+    ' Insert a helper column at Column F to compute sort order
+    ws.Columns("F").Insert Shift:=xlToRight
+    ws.Cells(1, "F").Value = "SortHelper"
+    
+    For i = 2 To lastRow
+        Select Case UCase(Trim(ws.Cells(i, "E").Value))
+            Case "CU": ws.Cells(i, "F").Value = 1
+            Case "IR": ws.Cells(i, "F").Value = 2
+            Case "KP": ws.Cells(i, "F").Value = 3
+            Case "RU": ws.Cells(i, "F").Value = 4
+            Case "BY": ws.Cells(i, "F").Value = 5
+            Case "VE": ws.Cells(i, "F").Value = 6
+            Case "NI": ws.Cells(i, "F").Value = 7
+            Case "UA": ws.Cells(i, "F").Value = 8
+            Case Else: ws.Cells(i, "F").Value = 9
+        End Select
+    Next i
+
+    ' Sort the entire dataset based on the helper column
+    With ws.Sort
+        .SortFields.Clear
+        .SortFields.Add Key:=ws.Range("F2:F" & lastRow), SortOn:=xlSortOnValues, Order:=xlAscending
+        .SetRange ws.Range("A1").CurrentRegion
+        .Header = xlYes
+        .Apply
+    End With
+
+    ' Delete the temporary helper column
+    ws.Columns("F").Delete
+
+    ' Restore Excel settings
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+
+    MsgBox "Data processing completed successfully!", vbInformation
+End Sub

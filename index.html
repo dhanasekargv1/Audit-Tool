@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>TXN Daily Report Cleaner</title>
+
+    <!-- Excel processing library -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 50px auto;
+            background: white;
+            padding: 35px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.10);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #222;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .upload-box {
+            border: 2px dashed #999;
+            border-radius: 10px;
+            padding: 35px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        input[type="file"] {
+            margin-top: 15px;
+        }
+
+        button {
+            background: #198754;
+            color: white;
+            border: none;
+            padding: 13px 25px;
+            border-radius: 7px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background: #146c43;
+        }
+
+        button:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 25px;
+            padding: 15px;
+            background: #f1f3f5;
+            border-radius: 8px;
+            white-space: pre-line;
+        }
+
+        .success {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #842029;
+        }
+
+        .steps {
+            margin-top: 30px;
+        }
+
+        .steps li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>TXN Daily Report Cleaner</h1>
+
+    <p class="subtitle">
+        Upload your TXN Excel report to automatically clean and organize the data.
+    </p>
+
+    <div class="upload-box">
+
+        <strong>Select your Excel file</strong>
+
+        <br>
+
+        <input
+            type="file"
+            id="excelFile"
+            accept=".xlsx,.xls"
+        >
+
+    </div>
+
+    <button
+        id="processButton"
+        onclick="processExcel()"
+        disabled
+    >
+        Clean TXN Report
+    </button>
+
+    <button
+        id="downloadButton"
+        onclick="downloadFile()"
+        disabled
+    >
+        Download Cleaned Report
+    </button>
+
+    <div id="status" class="status">
+        Please select an Excel file.
+    </div>
+
+    <div class="steps">
+
+        <h3>Automatic processing</h3>
+
+        <ol>
+            <li>Load the Excel workbook</li>
+            <li>Read the first worksheet</li>
+            <li>Delete columns D, E and G</li>
+            <li>Convert Column K text values to numbers</li>
+            <li>Remove duplicate rows using A, F, K and L</li>
+            <li>Prepare the cleaned Excel file</li>
+            <li>Download the cleaned report</li>
+        </ol>
+
+    </div>
+
+</div>
+
+<script>
+
+let cleanedWorkbook = null;
+let originalFileName = "TXN_Report.xlsx";
+
+
+// ==================================================
+// ENABLE BUTTON WHEN FILE IS SELECTED
+// ==================================================
+
+document
+.getElementById("excelFile")
+.addEventListener("change", function () {
+
+    const file = this.files[0];
+
+    if (file) {
+
+        originalFileName = file.name;
+
+        document
+        .getElementById("processButton")
+        .disabled = false;
+
+        document
+        .getElementById("downloadButton")
+        .disabled = true;
+
+        showStatus(
+            "File selected:\n" +
+            file.name +
+            "\n\nClick 'Clean TXN Report' to process it.",
+            ""
+        );
+
+    }
+
+});
+
+
+// ==================================================
+// MAIN EXCEL PROCESSING
+// ==================================================
+
+function processExcel() {
+
+    const fileInput =
+        document.getElementById("excelFile");
+
+    if (!fileInput.files.length) {
+
+        showStatus(
+            "Please select an Excel file first.",
+            "error"
+        );
+
+        return;
+    }
+
+    const file = fileInput.files[0];
+
+    showStatus(
+        "Processing Excel file...\nPlease wait.",
+        ""
+    );
+
+    const reader = new FileReader();
+
+
+    reader.onload = function(e) {
+
+        try {
+
+            const data =
+                new Uint8Array(e.target.result);
+
+
+            // Read Excel workbook
+            const workbook =
+                XLSX.read(
+                    data,
+                    {
+                        type: "array"
+                    }
+                );
+
+
+            // Use first worksheet
+            const sheetName =
+                workbook.SheetNames[0];
+
+            const worksheet =
+                workbook.Sheets[sheetName];
+
+
+            // Convert worksheet to array
+            let rows =
+                XLSX.utils.sheet_to_json(
+                    worksheet,
+                    {
+                        header: 1,
+                        defval: ""
+                    }
+                );
+
+
+            if (rows.length === 0) {
+
+                throw new Error(
+                    "The Excel file is empty."
+                );
+
+            }
+
+
+            // ==================================================
+            // STEP 1 - DELETE COLUMNS D, E AND G
+            // ==================================================
+
+            for (
+                let i = 0;
+                i < rows.length;
+                i++
+            ) {
+
+                if (!rows[i]) {
+                    rows[i] = [];
+                }
+
+                // Delete from right to left
+
+                // Delete G
+                rows[i].splice(6, 1);
+
+                // Delete E
+                rows[i].splice(4, 1);
+
+                // Delete D
+                rows[i].splice(3, 1);
+
+            }
+
+
+            // ==================================================
+            // STEP 2 - CONVERT COLUMN K TO NUMBER
+            // ==================================================
+
+            // K = position 10
+
+            const K_COLUMN = 10;
+
+
+            for (
+                let i = 1;
+                i < rows.length;
+                i++
+            ) {
+
+                let value =
+                    rows[i][K_COLUMN];
+
+
+                if (
+                    value !== null &&
+                    value !== undefined
+                ) {
+
+                    value =
+                        String(value).trim();
+
+
+                    if (value !== "") {
+
+                        // Remove commas
+                        // Remove spaces
+
+                        let cleanedValue =
+                            value
+                            .replace(/,/g, "")
+                            .replace(/\s/g, "");
+
+
+                        // Convert to number
+
+                        if (
+                            !isNaN(cleanedValue)
+                        ) {
+
+                            rows[i][K_COLUMN] =
+                                Number(cleanedValue);
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+
+            // ==================================================
+            // STEP 3 - REMOVE DUPLICATES
+            //
+            // Columns:
+            // A = 0
+            // F = 5
+            // K = 10
+            // L = 11
+            // ==================================================
+
+            const duplicateColumns = [
+                0,
+                5,
+                10,
+                11
+            ];
+
+
+            const uniqueRows = [];
+
+            const seen = new Set();
+
+
+            // Keep header
+
+            uniqueRows.push(
+                rows[0]
+            );
+
+
+            // Process data rows
+
+            for (
+                let i = 1;
+                i < rows.length;
+                i++
+            ) {
+
+                const row =
+                    rows[i];
+
+
+                const key =
+                    duplicateColumns
+                    .map(function(index) {
+
+                        let value =
+                            row[index];
+
+
+                        if (
+                            value === null ||
+                            value === undefined
+                        ) {
+
+                            value = "";
+
+                        }
+
+
+                        return String(value)
+                            .trim()
+                            .toLowerCase();
+
+                    })
+                    .join("|||");
+
+
+                // Keep unique rows only
+
+                if (!seen.has(key)) {
+
+                    seen.add(key);
+
+                    uniqueRows.push(row);
+
+                }
+
+            }
+
+
+            // ==================================================
+            // STEP 4 - CREATE NEW WORKBOOK
+            // ==================================================
+
+            const newWorksheet =
+                XLSX.utils.aoa_to_sheet(
+                    uniqueRows
+                );
+
+
+            const newWorkbook =
+                XLSX.utils.book_new();
+
+
+            XLSX.utils.book_append_sheet(
+                newWorkbook,
+                newWorksheet,
+                "TXN"
+            );
+
+
+            cleanedWorkbook =
+                newWorkbook;
+
+
+            // ==================================================
+            // STEP 5 - DISPLAY RESULTS
+            // ==================================================
+
+            const originalRows =
+                rows.length - 1;
+
+
+            const finalRows =
+                uniqueRows.length - 1;
+
+
+            const duplicatesRemoved =
+                originalRows - finalRows;
+
+
+            showStatus(
+
+                "TXN report processed successfully!\n\n" +
+
+                "Original data rows: " +
+                originalRows +
+                "\n" +
+
+                "Final data rows: " +
+                finalRows +
+                "\n" +
+
+                "Duplicates removed: " +
+                duplicatesRemoved +
+                "\n\n" +
+
+                "Columns deleted: D, E, G\n" +
+
+                "Column K converted to numbers\n" +
+
+                "Duplicate check: A, F, K, L\n\n" +
+
+                "Click 'Download Cleaned Report'.",
+
+                "success"
+
+            );
+
+
+            // Enable download button
+
+            document
+            .getElementById("downloadButton")
+            .disabled = false;
+
+
+        }
+
+        catch (error) {
+
+            console.error(error);
+
+
+            showStatus(
+
+                "Error processing the Excel file:\n\n" +
+                error.message,
+
+                "error"
+
+            );
+
+        }
+
+    };
+
+
+    reader.onerror = function() {
+
+        showStatus(
+            "Unable to read the Excel file.",
+            "error"
+        );
+
+    };
+
+
+    reader.readAsArrayBuffer(file);
+
+}
+
+
+// ==================================================
+// DOWNLOAD CLEANED EXCEL FILE
+// ==================================================
+
+function downloadFile() {
+
+    if (!cleanedWorkbook) {
+
+        showStatus(
+            "Please process the Excel file first.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    const outputFileName =
+        originalFileName.replace(
+            /\.(xlsx|xls)$/i,
+            ""
+        ) +
+        "_Cleaned.xlsx";
+
+
+    XLSX.writeFile(
+        cleanedWorkbook,
+        outputFileName
+    );
+
+
+    showStatus(
+
+        "Download started!\n\n" +
+        outputFileName,
+
+        "success"
+
+    );
+
+}
+
+
+// ==================================================
+// STATUS MESSAGE
+// ==================================================
+
+function showStatus(
+    message,
+    type
+) {
+
+    const status =
+        document.getElementById("status");
+
+
+    status.textContent =
+        message;
+
+
+    status.className =
+        "status";
+
+
+    if (type) {
+
+        status.classList.add(
+            type
+        );
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>

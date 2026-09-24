@@ -1,160 +1,168 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>TXN Daily Report Cleaner </title>
+```
+<title>Audit TXN Daily Report Cleaner</title>
 
-    <!-- Excel processing library -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<!-- Excel processing library -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            margin: 0;
-            padding: 0;
-        }
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f4f6f8;
+        margin: 0;
+        padding: 0;
+    }
 
-        .container {
-            max-width: 900px;
-            margin: 50px auto;
-            background: white;
-            padding: 35px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.10);
-        }
+    .container {
+        max-width: 900px;
+        margin: 50px auto;
+        background: white;
+        padding: 35px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.10);
+    }
 
-        h1 {
-            margin-top: 0;
-            color: #222;
-        }
+    h1 {
+        margin-top: 0;
+        color: #222;
+    }
 
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-        }
+    .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+    }
 
-        .upload-box {
-            border: 2px dashed #999;
-            border-radius: 10px;
-            padding: 35px;
-            text-align: center;
-            margin-bottom: 25px;
-        }
+    .upload-box {
+        border: 2px dashed #999;
+        border-radius: 10px;
+        padding: 35px;
+        text-align: center;
+        margin-bottom: 25px;
+    }
 
-        input[type="file"] {
-            margin-top: 15px;
-        }
+    input[type="file"] {
+        margin-top: 15px;
+    }
 
-        button {
-            background: #198754;
-            color: white;
-            border: none;
-            padding: 13px 25px;
-            border-radius: 7px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-right: 10px;
-        }
+    button {
+        background: #198754;
+        color: white;
+        border: none;
+        padding: 13px 25px;
+        border-radius: 7px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-right: 10px;
+    }
 
-        button:hover {
-            background: #146c43;
-        }
+    button:hover {
+        background: #146c43;
+    }
 
-        button:disabled {
-            background: #aaa;
-            cursor: not-allowed;
-        }
+    button:disabled {
+        background: #aaa;
+        cursor: not-allowed;
+    }
 
-        .status {
-            margin-top: 25px;
-            padding: 15px;
-            background: #f1f3f5;
-            border-radius: 8px;
-            white-space: pre-line;
-        }
+    .status {
+        margin-top: 25px;
+        padding: 15px;
+        background: #f1f3f5;
+        border-radius: 8px;
+        white-space: pre-line;
+    }
 
-        .success {
-            background: #d1e7dd;
-            color: #0f5132;
-        }
+    .success {
+        background: #d1e7dd;
+        color: #0f5132;
+    }
 
-        .error {
-            background: #f8d7da;
-            color: #842029;
-        }
+    .error {
+        background: #f8d7da;
+        color: #842029;
+    }
 
-        .steps {
-            margin-top: 30px;
-        }
+    .steps {
+        margin-top: 30px;
+    }
 
-        .steps li {
-            margin-bottom: 10px;
-        }
-    </style>
+    .steps li {
+        margin-bottom: 10px;
+    }
+</style>
+```
+
 </head>
 
 <body>
 
 <div class="container">
 
-    <h1> Audit TXN Daily Report Cleaner</h1>
+```
+<h1>Audit TXN Daily Report Cleaner</h1>
 
-    <p class="subtitle">
-        Upload your TXN Excel report to automatically clean and organize the data.
-    </p>
+<p class="subtitle">
+    Upload your TXN Excel report to automatically clean and organize the data.
+</p>
 
-    <div class="upload-box">
+<div class="upload-box">
 
-        <strong>Select your Excel file</strong>
+    <strong>Select your Excel file</strong>
 
-        <br>
+    <br>
 
-        <input
-            type="file"
-            id="excelFile"
-            accept=".xlsx,.xls"
-        >
-
-    </div>
-
-    <button
-        id="processButton"
-        onclick="processExcel()"
-        disabled
+    <input
+        type="file"
+        id="excelFile"
+        accept=".xlsx,.xls"
     >
-        Clean TXN Report
-    </button>
 
-    <button
-        id="downloadButton"
-        onclick="downloadFile()"
-        disabled
-    >
-        Download Cleaned Report
-    </button>
+</div>
 
-    <div id="status" class="status">
-        Please select an Excel file.
-    </div>
+<button
+    id="processButton"
+    onclick="processExcel()"
+    disabled
+>
+    Clean TXN Report
+</button>
 
-    <div class="steps">
+<button
+    id="downloadButton"
+    onclick="downloadFile()"
+    disabled
+>
+    Download Cleaned Report
+</button>
 
-        <h3>Automatic processing</h3>
+<div id="status" class="status">
+    Please select an Excel file.
+</div>
 
-        <ol>
-            <li>Load the Excel workbook</li>
-            <li>Read the first worksheet</li>
-            <li>Delete columns D, E and G</li>
-            <li>Convert Column K text values to numbers</li>
-            <li>Remove duplicate rows using A, F, K and L</li>
-            <li>Prepare the cleaned Excel file</li>
-            <li>Download the cleaned report</li>
-        </ol>
+<div class="steps">
 
-    </div>
+    <h3>Automatic processing</h3>
+
+    <ol>
+        <li>Load the Excel workbook</li>
+        <li>Read the first worksheet</li>
+        <li>Prioritize countries in original Column H:
+            CU, IR, KP, RU, BY, VE, NI, UA</li>
+        <li>Delete columns D, E and G</li>
+        <li>Convert Column K text values to numbers</li>
+        <li>Remove duplicate rows using A, F, K and L</li>
+        <li>Prepare the cleaned Excel file</li>
+        <li>Download the cleaned report</li>
+    </ol>
+
+</div>
+```
 
 </div>
 
@@ -235,7 +243,10 @@ function processExcel() {
                 new Uint8Array(e.target.result);
 
 
-            // Read Excel workbook
+            // ==================================================
+            // READ EXCEL WORKBOOK
+            // ==================================================
+
             const workbook =
                 XLSX.read(
                     data,
@@ -274,7 +285,100 @@ function processExcel() {
 
 
             // ==================================================
-            // STEP 1 - DELETE COLUMNS D, E AND G
+            // STEP 1 - PRIORITIZE COUNTRY FROM ORIGINAL COLUMN H
+            // ==================================================
+            //
+            // Original Column H = index 7
+            //
+            // Required order:
+            // CU → IR → KP → RU → BY → VE → NI → UA
+            //
+            // All other countries come after these.
+            //
+            // Header remains at the top.
+            // ==================================================
+
+            const countryPriority = [
+                "CU",
+                "IR",
+                "KP",
+                "RU",
+                "BY",
+                "VE",
+                "NI",
+                "UA"
+            ];
+
+
+            // Create priority lookup
+            const countryPriorityMap = {};
+
+
+            countryPriority.forEach(
+                function(country, index) {
+
+                    countryPriorityMap[country] =
+                        index;
+
+                }
+            );
+
+
+            const header =
+                rows[0];
+
+
+            const dataRows =
+                rows.slice(1);
+
+
+            dataRows.sort(
+                function(a, b) {
+
+                    // Original Column H
+                    const countryA =
+                        String(
+                            a[7] ?? ""
+                        )
+                        .trim()
+                        .toUpperCase();
+
+                    const countryB =
+                        String(
+                            b[7] ?? ""
+                        )
+                        .trim()
+                        .toUpperCase();
+
+
+                    // Priority value
+                    // Countries not listed get 999
+                    const priorityA =
+                        countryPriorityMap.hasOwnProperty(countryA)
+                            ? countryPriorityMap[countryA]
+                            : 999;
+
+                    const priorityB =
+                        countryPriorityMap.hasOwnProperty(countryB)
+                            ? countryPriorityMap[countryB]
+                            : 999;
+
+
+                    return priorityA - priorityB;
+
+                }
+            );
+
+
+            // Put header back
+            rows = [
+                header,
+                ...dataRows
+            ];
+
+
+            // ==================================================
+            // STEP 2 - DELETE COLUMNS D, E AND G
             // ==================================================
 
             for (
@@ -286,6 +390,7 @@ function processExcel() {
                 if (!rows[i]) {
                     rows[i] = [];
                 }
+
 
                 // Delete from right to left
 
@@ -302,7 +407,7 @@ function processExcel() {
 
 
             // ==================================================
-            // STEP 2 - CONVERT COLUMN K TO NUMBER
+            // STEP 3 - CONVERT COLUMN K TO NUMBER
             // ==================================================
 
             // K = position 10
@@ -359,7 +464,7 @@ function processExcel() {
 
 
             // ==================================================
-            // STEP 3 - REMOVE DUPLICATES
+            // STEP 4 - REMOVE DUPLICATES
             //
             // Columns:
             // A = 0
@@ -440,7 +545,7 @@ function processExcel() {
 
 
             // ==================================================
-            // STEP 4 - CREATE NEW WORKBOOK
+            // STEP 5 - CREATE NEW WORKBOOK
             // ==================================================
 
             const newWorksheet =
@@ -465,7 +570,7 @@ function processExcel() {
 
 
             // ==================================================
-            // STEP 5 - DISPLAY RESULTS
+            // STEP 6 - DISPLAY RESULTS
             // ==================================================
 
             const originalRows =
@@ -483,6 +588,9 @@ function processExcel() {
             showStatus(
 
                 "TXN report processed successfully!\n\n" +
+
+                "Country priority applied using original Column H:\n" +
+                "CU → IR → KP → RU → BY → VE → NI → UA\n\n" +
 
                 "Original data rows: " +
                 originalRows +

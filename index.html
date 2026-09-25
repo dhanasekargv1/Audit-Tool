@@ -1,302 +1,777 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit TXN Daily Report Cleaner</title>
 
-```
-<title>Audit TXN Daily Report Cleaner</title>
+    <!-- Excel processing library -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
-<!-- Excel processing library -->
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --navy: #123b68;
+            --blue: #1677e8;
+            --blue-dark: #0f5fbd;
+            --teal: #10a889;
+            --purple: #7650d6;
+            --orange: #f39a1e;
+            --pink: #d9367a;
+            --cyan: #10a9c7;
+            --page: #f4f8fc;
+            --card: #ffffff;
+            --text: #10233f;
+            --muted: #64748b;
+            --border: #dce8f3;
+            --success-bg: #e9f8f2;
+            --success-text: #087453;
+            --error-bg: #fff0f1;
+            --error-text: #a51f2d;
+        }
 
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #f4f6f8;
-        margin: 0;
-        padding: 0;
-    }
+        * {
+            box-sizing: border-box;
+        }
 
-    .container {
-        max-width: 900px;
-        margin: 50px auto;
-        background: white;
-        padding: 35px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.10);
-    }
+        body {
+            margin: 0;
+            font-family: Inter, "Segoe UI", Arial, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 10% 0%, rgba(22,119,232,.08), transparent 28%),
+                linear-gradient(180deg, #f8fbff 0%, var(--page) 100%);
+            min-height: 100vh;
+        }
 
-    h1 {
-        margin-top: 0;
-        color: #222;
-    }
+        .page {
+            width: min(1400px, calc(100% - 32px));
+            margin: 20px auto 40px;
+        }
 
-    .subtitle {
-        color: #666;
-        margin-bottom: 30px;
-    }
+        /* Header */
+        .hero {
+            position: relative;
+            overflow: hidden;
+            min-height: 158px;
+            padding: 30px 40px;
+            border-radius: 18px;
+            color: white;
+            background: linear-gradient(115deg, #173e6b 0%, #1164ae 58%, #0e4d87 100%);
+            box-shadow: 0 12px 30px rgba(20, 61, 105, .18);
+        }
 
-    .upload-box {
-        border: 2px dashed #999;
-        border-radius: 10px;
-        padding: 35px;
-        text-align: center;
-        margin-bottom: 25px;
-    }
+        .hero::after {
+            content: "";
+            position: absolute;
+            right: -80px;
+            top: -100px;
+            width: 430px;
+            height: 300px;
+            background: rgba(62, 214, 215, .14);
+            border-radius: 50%;
+            transform: rotate(-25deg);
+        }
 
-    input[type="file"] {
-        margin-top: 15px;
-    }
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+        }
 
-    button {
-        background: #198754;
-        color: white;
-        border: none;
-        padding: 13px 25px;
-        border-radius: 7px;
-        font-size: 16px;
-        cursor: pointer;
-        margin-right: 10px;
-    }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+        }
 
-    button:hover {
-        background: #146c43;
-    }
+        .excel-logo {
+            width: 72px;
+            height: 72px;
+            display: grid;
+            place-items: center;
+            flex: 0 0 72px;
+            border-radius: 18px;
+            background: rgba(255,255,255,.13);
+            border: 1px solid rgba(255,255,255,.24);
+            font-size: 43px;
+            box-shadow: 0 8px 18px rgba(0,0,0,.12);
+        }
 
-    button:disabled {
-        background: #aaa;
-        cursor: not-allowed;
-    }
+        .hero h1 {
+            margin: 0 0 8px;
+            font-size: clamp(27px, 3vw, 43px);
+            line-height: 1.08;
+            letter-spacing: -.8px;
+        }
 
-    .status {
-        margin-top: 25px;
-        padding: 15px;
-        background: #f1f3f5;
-        border-radius: 8px;
-        white-space: pre-line;
-    }
+        .hero h1 span {
+            color: #65e1d6;
+        }
 
-    .success {
-        background: #d1e7dd;
-        color: #0f5132;
-    }
+        .hero p {
+            margin: 0;
+            color: rgba(255,255,255,.88);
+            font-size: 17px;
+        }
 
-    .error {
-        background: #f8d7da;
-        color: #842029;
-    }
+        .hero-badge {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            min-width: 205px;
+            font-size: 14px;
+            line-height: 1.55;
+        }
 
-    .steps {
-        margin-top: 30px;
-    }
+        .check {
+            width: 48px;
+            height: 48px;
+            border: 3px solid #63ead8;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: #63ead8;
+            font-size: 25px;
+        }
 
-    .steps li {
-        margin-bottom: 10px;
-    }
-</style>
-```
+        /* Main card */
+        .main-card {
+            margin-top: 22px;
+            padding: 26px;
+            background: var(--card);
+            border: 1px solid #dcebf7;
+            border-radius: 18px;
+            box-shadow: 0 8px 25px rgba(30, 75, 115, .08);
+        }
 
+        /* Upload */
+        .upload-box {
+            position: relative;
+            min-height: 245px;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border: 2px dashed #8ecbff;
+            border-radius: 15px;
+            background: linear-gradient(180deg, #fafdff, #f5fbff);
+            transition: .2s ease;
+        }
+
+        .upload-box.dragover {
+            border-color: var(--blue);
+            background: #edf7ff;
+            transform: translateY(-1px);
+        }
+
+        .upload-icon {
+            font-size: 54px;
+            line-height: 1;
+            margin-bottom: 12px;
+        }
+
+        .upload-box h2 {
+            margin: 0 0 7px;
+            font-size: 25px;
+        }
+
+        .upload-box p {
+            margin: 0 0 20px;
+            color: var(--muted);
+            font-size: 16px;
+        }
+
+        #excelFile {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .choose-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            padding: 13px 27px;
+            border-radius: 10px;
+            color: white;
+            background: linear-gradient(135deg, #1677e8, #0d68cf);
+            box-shadow: 0 7px 16px rgba(22,119,232,.22);
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .file-name {
+            margin-top: 13px;
+            color: var(--muted);
+            font-size: 14px;
+            min-height: 20px;
+        }
+
+        /* Buttons */
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1.1fr;
+            gap: 18px;
+            margin-top: 22px;
+        }
+
+        button {
+            border: 0;
+            min-height: 62px;
+            padding: 14px 22px;
+            border-radius: 11px;
+            color: white;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(20, 50, 90, .16);
+        }
+
+        button:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        #processButton {
+            background: linear-gradient(135deg, #0fa37f, #0b8d70);
+        }
+
+        #downloadButton {
+            background: linear-gradient(135deg, #7950d8, #6841c4);
+        }
+
+        /* Status */
+        .status {
+            margin-top: 22px;
+            padding: 18px 20px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            border-radius: 11px;
+            background: #eef5fb;
+            color: #15519a;
+            white-space: pre-line;
+            border: 1px solid #d8e9f8;
+            line-height: 1.5;
+        }
+
+        .status.success {
+            background: var(--success-bg);
+            color: var(--success-text);
+            border-color: #c7eadc;
+        }
+
+        .status.error {
+            background: var(--error-bg);
+            color: var(--error-text);
+            border-color: #f4c9ce;
+        }
+
+        /* Processing section */
+        .processing-card {
+            margin-top: 22px;
+            padding: 28px 26px 30px;
+            background: rgba(255,255,255,.92);
+            border: 1px solid #dcebf7;
+            border-radius: 18px;
+            box-shadow: 0 8px 25px rgba(30, 75, 115, .07);
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            margin-bottom: 22px;
+        }
+
+        .section-icon {
+            font-size: 32px;
+        }
+
+        .section-title h2 {
+            margin: 0;
+            font-size: 27px;
+        }
+
+        .title-line {
+            width: 76px;
+            height: 3px;
+            margin-top: 7px;
+            background: var(--teal);
+            border-radius: 99px;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(8, minmax(105px, 1fr));
+            gap: 12px;
+        }
+
+        .step {
+            position: relative;
+            min-height: 185px;
+            padding: 17px 10px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            border: 1px solid #d9eaf7;
+            border-radius: 12px;
+            background: linear-gradient(180deg, #fbfdff, #f3faff);
+        }
+
+        .step:not(:last-child)::after {
+            content: "›";
+            position: absolute;
+            right: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 3;
+            color: #2787df;
+            font-size: 27px;
+            font-weight: 700;
+        }
+
+        .step-number {
+            width: 35px;
+            height: 35px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 10px;
+            border-radius: 50%;
+            color: white;
+            font-weight: 800;
+            background: var(--blue);
+        }
+
+        .step:nth-child(2) .step-number { background: #20a76f; }
+        .step:nth-child(3) .step-number { background: #7650d6; }
+        .step:nth-child(4) .step-number { background: var(--orange); }
+        .step:nth-child(5) .step-number { background: var(--cyan); }
+        .step:nth-child(6) .step-number { background: var(--pink); }
+        .step:nth-child(7) .step-number { background: #327fe3; }
+        .step:nth-child(8) .step-number { background: #7650d6; }
+
+        .step-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .step strong {
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        .step small {
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.3;
+        }
+
+        /* Result stats */
+        .results {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-top: 20px;
+        }
+
+        .result-box {
+            padding: 17px;
+            border-radius: 12px;
+            background: #f7fbff;
+            border: 1px solid #dfedf8;
+        }
+
+        .result-box span {
+            display: block;
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .result-box strong {
+            font-size: 25px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #8090a2;
+            font-size: 12px;
+        }
+
+        @media (max-width: 1050px) {
+            .steps-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .step:nth-child(4)::after,
+            .step:nth-child(8)::after {
+                display: none;
+            }
+
+            .step:nth-child(5)::after {
+                display: block;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .page {
+                width: min(100% - 20px, 700px);
+                margin-top: 10px;
+            }
+
+            .hero {
+                padding: 25px;
+            }
+
+            .hero-content {
+                align-items: flex-start;
+            }
+
+            .hero-badge {
+                display: none;
+            }
+
+            .brand {
+                gap: 15px;
+            }
+
+            .excel-logo {
+                width: 55px;
+                height: 55px;
+                flex-basis: 55px;
+                font-size: 32px;
+            }
+
+            .hero p {
+                font-size: 14px;
+            }
+
+            .main-card,
+            .processing-card {
+                padding: 18px;
+            }
+
+            .actions {
+                grid-template-columns: 1fr;
+            }
+
+            .steps-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .step::after {
+                display: none !important;
+            }
+
+            .results {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 
 <body>
+<div class="page">
 
-<div class="container">
+    <!-- Modern header -->
+    <header class="hero">
+        <div class="hero-content">
+            <div class="brand">
+                <div class="excel-logo">📊</div>
+                <div>
+                    <h1>Audit <span>TXN</span> Daily Report Cleaner</h1>
+                    <p>Upload your TXN Excel report to automatically clean and organize the data.</p>
+                </div>
+            </div>
 
-```
-<h1>Audit TXN Daily Report Cleaner</h1>
+            <div class="hero-badge">
+                <div class="check">✓</div>
+                <div>
+                    <strong>Clean Data</strong><br>
+                    Better Insights<br>
+                    Smarter Audits
+                </div>
+            </div>
+        </div>
+    </header>
 
-<p class="subtitle">
-    Upload your TXN Excel report to automatically clean and organize the data.
-</p>
+    <!-- Upload and action area -->
+    <section class="main-card">
 
-<div class="upload-box">
+        <div class="upload-box" id="uploadBox">
+            <div class="upload-icon">☁️</div>
+            <h2>Select your Excel file</h2>
+            <p>Drag and drop your file here or click the button below</p>
 
-    <strong>Select your Excel file</strong>
+            <label class="choose-btn" for="excelFile">
+                📄 Choose File
+            </label>
 
-    <br>
+            <input
+                type="file"
+                id="excelFile"
+                accept=".xlsx,.xls"
+            >
 
-    <input
-        type="file"
-        id="excelFile"
-        accept=".xlsx,.xls"
-    >
+            <div class="file-name" id="fileName">No file chosen</div>
+        </div>
 
-</div>
+        <div class="actions">
+            <button id="processButton" onclick="processExcel()" disabled>
+                ✨ Clean TXN Report
+            </button>
 
-<button
-    id="processButton"
-    onclick="processExcel()"
-    disabled
->
-    Clean TXN Report
-</button>
+            <button id="downloadButton" onclick="downloadFile()" disabled>
+                ⇩ Download Cleaned Report
+            </button>
+        </div>
 
-<button
-    id="downloadButton"
-    onclick="downloadFile()"
-    disabled
->
-    Download Cleaned Report
-</button>
+        <div id="status" class="status">
+            ℹ️ &nbsp; Please select an Excel file.
+        </div>
 
-<div id="status" class="status">
-    Please select an Excel file.
-</div>
+        <div class="results" id="results">
+            <div class="result-box">
+                <span>Original Data Rows</span>
+                <strong id="originalCount">0</strong>
+            </div>
+            <div class="result-box">
+                <span>Final Data Rows</span>
+                <strong id="finalCount">0</strong>
+            </div>
+            <div class="result-box">
+                <span>Duplicates Removed</span>
+                <strong id="duplicateCount">0</strong>
+            </div>
+        </div>
+    </section>
 
-<div class="steps">
+    <!-- Processing workflow -->
+    <section class="processing-card">
+        <div class="section-title">
+            <div class="section-icon">⚙️</div>
+            <div>
+                <h2>Automatic Processing</h2>
+                <div class="title-line"></div>
+            </div>
+        </div>
 
-    <h3>Automatic processing</h3>
+        <div class="steps-grid">
 
-    <ol>
-        <li>Load the Excel workbook</li>
-        <li>Read the first worksheet</li>
-        <li>Prioritize countries in original Column H:
-            CU, IR, KP, RU, BY, VE, NI, UA</li>
-        <li>Delete columns D, E and G</li>
-        <li>Convert Column K text values to numbers</li>
-        <li>Remove duplicate rows using A, F, K and L</li>
-        <li>Prepare the cleaned Excel file</li>
-        <li>Download the cleaned report</li>
-    </ol>
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-icon">📄</div>
+                <strong>Load the Excel workbook</strong>
+            </div>
 
-</div>
-```
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-icon">▤</div>
+                <strong>Read the first worksheet</strong>
+            </div>
 
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-icon">🌐</div>
+                <strong>Prioritize countries</strong>
+                <small>Original Column H:<br>CU, IR, KP, RU, BY, VE, NI, UA</small>
+            </div>
+
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-icon">🗑️</div>
+                <strong>Delete columns</strong>
+                <small>D, E and G</small>
+            </div>
+
+            <div class="step">
+                <div class="step-number">5</div>
+                <div class="step-icon">123</div>
+                <strong>Convert Column K</strong>
+                <small>Text values to numbers</small>
+            </div>
+
+            <div class="step">
+                <div class="step-number">6</div>
+                <div class="step-icon">▣</div>
+                <strong>Remove duplicate rows</strong>
+                <small>Using A, F, K and L</small>
+            </div>
+
+            <div class="step">
+                <div class="step-number">7</div>
+                <div class="step-icon">⚙️</div>
+                <strong>Prepare the cleaned Excel file</strong>
+            </div>
+
+            <div class="step">
+                <div class="step-number">8</div>
+                <div class="step-icon">⇩</div>
+                <strong>Download the cleaned report</strong>
+            </div>
+
+        </div>
+    </section>
+
+    <div class="footer">
+        Audit TXN Daily Report Cleaner • Excel processing runs in your browser
+    </div>
 </div>
 
 <script>
-
 let cleanedWorkbook = null;
 let originalFileName = "TXN_Report.xlsx";
 
+/* ==================================================
+   FILE SELECTION + DRAG AND DROP
+   ================================================== */
 
-// ==================================================
-// ENABLE BUTTON WHEN FILE IS SELECTED
-// ==================================================
+const fileInput = document.getElementById("excelFile");
+const uploadBox = document.getElementById("uploadBox");
 
-document
-.getElementById("excelFile")
-.addEventListener("change", function () {
-
-    const file = this.files[0];
-
-    if (file) {
-
-        originalFileName = file.name;
-
-        document
-        .getElementById("processButton")
-        .disabled = false;
-
-        document
-        .getElementById("downloadButton")
-        .disabled = true;
-
-        showStatus(
-            "File selected:\n" +
-            file.name +
-            "\n\nClick 'Clean TXN Report' to process it.",
-            ""
-        );
-
+fileInput.addEventListener("change", function () {
+    if (this.files.length) {
+        handleSelectedFile(this.files[0]);
     }
-
 });
 
+["dragenter", "dragover"].forEach(eventName => {
+    uploadBox.addEventListener(eventName, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadBox.classList.add("dragover");
+    });
+});
 
-// ==================================================
-// MAIN EXCEL PROCESSING
-// ==================================================
+["dragleave", "drop"].forEach(eventName => {
+    uploadBox.addEventListener(eventName, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadBox.classList.remove("dragover");
+    });
+});
+
+uploadBox.addEventListener("drop", function (e) {
+    const files = e.dataTransfer.files;
+
+    if (!files.length) return;
+
+    const file = files[0];
+
+    if (!/\.(xlsx|xls)$/i.test(file.name)) {
+        showStatus("Please upload an Excel file (.xlsx or .xls).", "error");
+        return;
+    }
+
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    fileInput.files = transfer.files;
+
+    handleSelectedFile(file);
+});
+
+function handleSelectedFile(file) {
+    originalFileName = file.name;
+
+    document.getElementById("processButton").disabled = false;
+    document.getElementById("downloadButton").disabled = true;
+    document.getElementById("fileName").textContent = file.name;
+
+    document.getElementById("results").style.display = "none";
+
+    showStatus(
+        "✓ File selected: " + file.name +
+        "\n\nClick 'Clean TXN Report' to process it.",
+        ""
+    );
+}
+
+/* ==================================================
+   MAIN EXCEL PROCESSING
+   ================================================== */
 
 function processExcel() {
 
-    const fileInput =
-        document.getElementById("excelFile");
+    const fileInput = document.getElementById("excelFile");
 
     if (!fileInput.files.length) {
-
-        showStatus(
-            "Please select an Excel file first.",
-            "error"
-        );
-
+        showStatus("Please select an Excel file first.", "error");
         return;
     }
 
     const file = fileInput.files[0];
 
     showStatus(
-        "Processing Excel file...\nPlease wait.",
+        "⏳ Processing Excel file...\nPlease wait while the report is cleaned.",
         ""
     );
 
-    const reader = new FileReader();
+    const processButton = document.getElementById("processButton");
+    processButton.disabled = true;
 
+    const reader = new FileReader();
 
     reader.onload = function(e) {
 
         try {
 
-            const data =
-                new Uint8Array(e.target.result);
+            const data = new Uint8Array(e.target.result);
 
+            /* ==================================================
+               READ EXCEL WORKBOOK
+               ================================================== */
 
-            // ==================================================
-            // READ EXCEL WORKBOOK
-            // ==================================================
-
-            const workbook =
-                XLSX.read(
-                    data,
-                    {
-                        type: "array"
-                    }
-                );
-
+            const workbook = XLSX.read(
+                data,
+                {
+                    type: "array"
+                }
+            );
 
             // Use first worksheet
-            const sheetName =
-                workbook.SheetNames[0];
-
-            const worksheet =
-                workbook.Sheets[sheetName];
-
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
 
             // Convert worksheet to array
-            let rows =
-                XLSX.utils.sheet_to_json(
-                    worksheet,
-                    {
-                        header: 1,
-                        defval: ""
-                    }
-                );
-
+            let rows = XLSX.utils.sheet_to_json(
+                worksheet,
+                {
+                    header: 1,
+                    defval: ""
+                }
+            );
 
             if (rows.length === 0) {
-
-                throw new Error(
-                    "The Excel file is empty."
-                );
-
+                throw new Error("The Excel file is empty.");
             }
 
+            /* ==================================================
+               STEP 1 - PRIORITIZE COUNTRY FROM ORIGINAL COLUMN H
+               ================================================== */
 
-            // ==================================================
-            // STEP 1 - PRIORITIZE COUNTRY FROM ORIGINAL COLUMN H
-            // ==================================================
-            //
             // Original Column H = index 7
-            //
             // Required order:
             // CU → IR → KP → RU → BY → VE → NI → UA
-            //
-            // All other countries come after these.
-            //
-            // Header remains at the top.
-            // ==================================================
 
             const countryPriority = [
                 "CU",
@@ -309,77 +784,46 @@ function processExcel() {
                 "UA"
             ];
 
-
-            // Create priority lookup
             const countryPriorityMap = {};
 
+            countryPriority.forEach(function(country, index) {
+                countryPriorityMap[country] = index;
+            });
 
-            countryPriority.forEach(
-                function(country, index) {
+            const header = rows[0];
+            const dataRows = rows.slice(1);
 
-                    countryPriorityMap[country] =
-                        index;
+            dataRows.sort(function(a, b) {
 
-                }
-            );
+                const countryA = String(a[7] ?? "")
+                    .trim()
+                    .toUpperCase();
 
+                const countryB = String(b[7] ?? "")
+                    .trim()
+                    .toUpperCase();
 
-            const header =
-                rows[0];
+                const priorityA =
+                    countryPriorityMap.hasOwnProperty(countryA)
+                        ? countryPriorityMap[countryA]
+                        : 999;
 
+                const priorityB =
+                    countryPriorityMap.hasOwnProperty(countryB)
+                        ? countryPriorityMap[countryB]
+                        : 999;
 
-            const dataRows =
-                rows.slice(1);
+                return priorityA - priorityB;
+            });
 
-
-            dataRows.sort(
-                function(a, b) {
-
-                    // Original Column H
-                    const countryA =
-                        String(
-                            a[7] ?? ""
-                        )
-                        .trim()
-                        .toUpperCase();
-
-                    const countryB =
-                        String(
-                            b[7] ?? ""
-                        )
-                        .trim()
-                        .toUpperCase();
-
-
-                    // Priority value
-                    // Countries not listed get 999
-                    const priorityA =
-                        countryPriorityMap.hasOwnProperty(countryA)
-                            ? countryPriorityMap[countryA]
-                            : 999;
-
-                    const priorityB =
-                        countryPriorityMap.hasOwnProperty(countryB)
-                            ? countryPriorityMap[countryB]
-                            : 999;
-
-
-                    return priorityA - priorityB;
-
-                }
-            );
-
-
-            // Put header back
             rows = [
                 header,
                 ...dataRows
             ];
 
-
-            // ==================================================
-            // STEP 2 - DELETE COLUMNS D, E AND G
-            // ==================================================
+            /* ==================================================
+               STEP 2 - DELETE COLUMNS D, E AND G
+               ================================================== */
 
             for (
                 let i = 0;
@@ -391,29 +835,20 @@ function processExcel() {
                     rows[i] = [];
                 }
 
-
                 // Delete from right to left
-
-                // Delete G
-                rows[i].splice(6, 1);
-
-                // Delete E
-                rows[i].splice(4, 1);
-
-                // Delete D
-                rows[i].splice(3, 1);
-
+                rows[i].splice(6, 1); // G
+                rows[i].splice(4, 1); // E
+                rows[i].splice(3, 1); // D
             }
 
+            /* ==================================================
+               STEP 3 - CONVERT COLUMN K TO NUMBER
+               ================================================== */
 
-            // ==================================================
-            // STEP 3 - CONVERT COLUMN K TO NUMBER
-            // ==================================================
-
-            // K = position 10
+            // Preserving the existing project logic:
+            // K = position 10 after the column deletions.
 
             const K_COLUMN = 10;
-
 
             for (
                 let i = 1;
@@ -421,57 +856,37 @@ function processExcel() {
                 i++
             ) {
 
-                let value =
-                    rows[i][K_COLUMN];
-
+                let value = rows[i][K_COLUMN];
 
                 if (
                     value !== null &&
                     value !== undefined
                 ) {
 
-                    value =
-                        String(value).trim();
-
+                    value = String(value).trim();
 
                     if (value !== "") {
 
-                        // Remove commas
-                        // Remove spaces
-
-                        let cleanedValue =
-                            value
+                        let cleanedValue = value
                             .replace(/,/g, "")
                             .replace(/\s/g, "");
 
-
-                        // Convert to number
-
-                        if (
-                            !isNaN(cleanedValue)
-                        ) {
-
+                        if (!isNaN(cleanedValue)) {
                             rows[i][K_COLUMN] =
                                 Number(cleanedValue);
-
                         }
-
                     }
-
                 }
-
             }
 
-
-            // ==================================================
-            // STEP 4 - REMOVE DUPLICATES
-            //
-            // Columns:
-            // A = 0
-            // F = 5
-            // K = 10
-            // L = 11
-            // ==================================================
+            /* ==================================================
+               STEP 4 - REMOVE DUPLICATES
+               Columns:
+               A = 0
+               F = 5
+               K = 10
+               L = 11
+               ================================================== */
 
             const duplicateColumns = [
                 0,
@@ -480,48 +895,32 @@ function processExcel() {
                 11
             ];
 
-
             const uniqueRows = [];
-
             const seen = new Set();
 
-
             // Keep header
-
-            uniqueRows.push(
-                rows[0]
-            );
-
+            uniqueRows.push(rows[0]);
 
             // Process data rows
-
             for (
                 let i = 1;
                 i < rows.length;
                 i++
             ) {
 
-                const row =
-                    rows[i];
+                const row = rows[i];
 
-
-                const key =
-                    duplicateColumns
+                const key = duplicateColumns
                     .map(function(index) {
 
-                        let value =
-                            row[index];
-
+                        let value = row[index];
 
                         if (
                             value === null ||
                             value === undefined
                         ) {
-
                             value = "";
-
                         }
-
 
                         return String(value)
                             .trim()
@@ -530,33 +929,24 @@ function processExcel() {
                     })
                     .join("|||");
 
-
                 // Keep unique rows only
-
                 if (!seen.has(key)) {
 
                     seen.add(key);
-
                     uniqueRows.push(row);
 
                 }
-
             }
 
-
-            // ==================================================
-            // STEP 5 - CREATE NEW WORKBOOK
-            // ==================================================
+            /* ==================================================
+               STEP 5 - CREATE NEW WORKBOOK
+               ================================================== */
 
             const newWorksheet =
-                XLSX.utils.aoa_to_sheet(
-                    uniqueRows
-                );
-
+                XLSX.utils.aoa_to_sheet(uniqueRows);
 
             const newWorkbook =
                 XLSX.utils.book_new();
-
 
             XLSX.utils.book_append_sheet(
                 newWorkbook,
@@ -564,65 +954,41 @@ function processExcel() {
                 "TXN"
             );
 
+            cleanedWorkbook = newWorkbook;
 
-            cleanedWorkbook =
-                newWorkbook;
+            /* ==================================================
+               STEP 6 - DISPLAY RESULTS
+               ================================================== */
 
-
-            // ==================================================
-            // STEP 6 - DISPLAY RESULTS
-            // ==================================================
-
-            const originalRows =
-                rows.length - 1;
-
-
-            const finalRows =
-                uniqueRows.length - 1;
-
-
-            const duplicatesRemoved =
-                originalRows - finalRows;
-
+            const originalRows = rows.length - 1;
+            const finalRows = uniqueRows.length - 1;
+            const duplicatesRemoved = originalRows - finalRows;
 
             showStatus(
-
-                "TXN report processed successfully!\n\n" +
-
+                "✓ TXN report processed successfully!\n\n" +
                 "Country priority applied using original Column H:\n" +
                 "CU → IR → KP → RU → BY → VE → NI → UA\n\n" +
-
-                "Original data rows: " +
-                originalRows +
-                "\n" +
-
-                "Final data rows: " +
-                finalRows +
-                "\n" +
-
-                "Duplicates removed: " +
-                duplicatesRemoved +
-                "\n\n" +
-
                 "Columns deleted: D, E, G\n" +
-
                 "Column K converted to numbers\n" +
-
                 "Duplicate check: A, F, K, L\n\n" +
-
-                "Click 'Download Cleaned Report'.",
-
+                "Your cleaned report is ready to download.",
                 "success"
-
             );
 
+            document.getElementById("originalCount").textContent =
+                originalRows.toLocaleString();
 
-            // Enable download button
+            document.getElementById("finalCount").textContent =
+                finalRows.toLocaleString();
 
-            document
-            .getElementById("downloadButton")
-            .disabled = false;
+            document.getElementById("duplicateCount").textContent =
+                duplicatesRemoved.toLocaleString();
 
+            document.getElementById("results").style.display =
+                "grid";
+
+            document.getElementById("downloadButton").disabled =
+                false;
 
         }
 
@@ -630,39 +996,34 @@ function processExcel() {
 
             console.error(error);
 
-
             showStatus(
-
                 "Error processing the Excel file:\n\n" +
                 error.message,
-
                 "error"
-
             );
-
         }
 
+        finally {
+            processButton.disabled = false;
+        }
     };
 
-
     reader.onerror = function() {
+
+        processButton.disabled = false;
 
         showStatus(
             "Unable to read the Excel file.",
             "error"
         );
-
     };
 
-
     reader.readAsArrayBuffer(file);
-
 }
 
-
-// ==================================================
-// DOWNLOAD CLEANED EXCEL FILE
-// ==================================================
+/* ==================================================
+   DOWNLOAD CLEANED EXCEL FILE
+   ================================================== */
 
 function downloadFile() {
 
@@ -676,7 +1037,6 @@ function downloadFile() {
         return;
     }
 
-
     const outputFileName =
         originalFileName.replace(
             /\.(xlsx|xls)$/i,
@@ -684,56 +1044,42 @@ function downloadFile() {
         ) +
         "_Cleaned.xlsx";
 
-
     XLSX.writeFile(
         cleanedWorkbook,
         outputFileName
     );
 
-
     showStatus(
-
-        "Download started!\n\n" +
+        "✓ Download started!\n\n" +
         outputFileName,
-
         "success"
-
     );
-
 }
 
+/* ==================================================
+   STATUS MESSAGE
+   ================================================== */
 
-// ==================================================
-// STATUS MESSAGE
-// ==================================================
-
-function showStatus(
-    message,
-    type
-) {
+function showStatus(message, type) {
 
     const status =
         document.getElementById("status");
 
+    let prefix = "";
 
-    status.textContent =
-        message;
-
-
-    status.className =
-        "status";
-
-
-    if (type) {
-
-        status.classList.add(
-            type
-        );
-
+    if (type === "success") {
+        prefix = "";
     }
 
-}
+    status.textContent =
+        prefix + message;
 
+    status.className = "status";
+
+    if (type) {
+        status.classList.add(type);
+    }
+}
 </script>
 
 </body>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audit TXN Daily Report Cleaner</title>
+    <title>Audit Tool</title>
 
     <!-- Excel processing library -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
@@ -487,6 +487,127 @@
                 grid-template-columns: 1fr;
             }
         }
+        /* ==================================================
+           AUDIT TOOL DASHBOARD + STEP 2
+           ================================================== */
+
+        .tool-nav {
+            margin-top: 22px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .tool-card {
+            border: 2px solid var(--border);
+            background: #fff;
+            border-radius: 15px;
+            padding: 20px 22px;
+            cursor: pointer;
+            text-align: left;
+            transition: .2s ease;
+            box-shadow: 0 5px 16px rgba(30,75,115,.05);
+        }
+
+        .tool-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 9px 20px rgba(30,75,115,.10);
+        }
+
+        .tool-card.active {
+            border-color: var(--blue);
+            background: linear-gradient(180deg, #f7fbff, #eef7ff);
+            box-shadow: 0 8px 20px rgba(22,119,232,.10);
+        }
+
+        .tool-card .tool-number {
+            display: inline-flex;
+            width: 34px;
+            height: 34px;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--blue);
+            color: #fff;
+            font-weight: 800;
+            margin-right: 9px;
+        }
+
+        .tool-card:nth-child(2) .tool-number {
+            background: var(--purple);
+        }
+
+        .tool-card strong {
+            font-size: 17px;
+        }
+
+        .tool-card p {
+            margin: 8px 0 0 43px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .workflow-area {
+            display: none;
+        }
+
+        .workflow-area.active {
+            display: block;
+        }
+
+        .step2-info {
+            margin-bottom: 18px;
+            padding: 15px 17px;
+            border-radius: 11px;
+            background: #f6f2ff;
+            border: 1px solid #ddd2fb;
+            color: #4d3a91;
+            line-height: 1.5;
+        }
+
+        .step2-columns {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .step2-column {
+            padding: 14px;
+            border: 1px solid #e0eaf4;
+            border-radius: 11px;
+            background: #f9fcff;
+        }
+
+        .step2-column strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .step2-column span {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        #rplProcessButton {
+            background: linear-gradient(135deg, #7650d6, #603db8);
+        }
+
+        #rplDownloadButton {
+            background: linear-gradient(135deg, #0fa37f, #0b8d70);
+        }
+
+        @media (max-width: 760px) {
+            .tool-nav {
+                grid-template-columns: 1fr;
+            }
+
+            .step2-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
     </style>
 </head>
 
@@ -499,8 +620,8 @@
             <div class="brand">
                 <div class="excel-logo">📊</div>
                 <div>
-                    <h1>Audit <span>TXN</span> Daily Report Cleaner</h1>
-                    <p>Upload your TXN Excel report to automatically clean and organize the data.</p>
+                    <h1>Audit <span>Tool</span></h1>
+                    <p>Automate your TXN cleaning and RPL name matching workflows.</p>
                 </div>
             </div>
 
@@ -516,6 +637,18 @@
     </header>
 
     <!-- Upload and action area -->
+<div class="tool-nav">
+        <div class="tool-card active" id="step1Card" onclick="showWorkflow(1)">
+            <span class="tool-number">1</span><strong>TXN Daily Report Cleaner</strong>
+            <p>Clean, prioritize, convert and de-duplicate your TXN report.</p>
+        </div>
+        <div class="tool-card" id="step2Card" onclick="showWorkflow(2)">
+            <span class="tool-number">2</span><strong>RPL Name Matching</strong>
+            <p>Compare Name and RplName using Fuzzy and Jaro-Winkler matching.</p>
+        </div>
+    </div>
+
+    <div id="step1Area" class="workflow-area active">
     <section class="main-card">
 
         <div class="upload-box" id="uploadBox">
@@ -542,7 +675,7 @@
             </button>
 
             <button id="downloadButton" onclick="downloadFile()" disabled>
-                ⇩ Download Cleaned Report
+                ⇩ Download Cleaned TXN Report
             </button>
         </div>
 
@@ -632,6 +765,93 @@
 
         </div>
     </section>
+
+    </div><!-- /step1Area -->
+
+    <div id="step2Area" class="workflow-area">
+        <section class="main-card">
+            <div class="section-title">
+                <div class="section-icon">🔎</div>
+                <div>
+                    <h2>RPL Name Matching</h2>
+                    <div class="title-line"></div>
+                </div>
+            </div>
+
+            <div class="step2-info">
+                <strong>Step 2:</strong> Upload the separate RPL input file. The tool will keep the six required columns, remove duplicates, normalize Name and RplName internally, calculate Fuzzy and Jaro-Winkler scores, and return the larger score in Column I.
+            </div>
+
+            <div class="upload-box" id="rplUploadBox">
+                <div class="upload-icon">🔎</div>
+                <h2>Select your RPL Excel file</h2>
+                <p>Drag and drop your RPL file here or click the button below</p>
+
+                <label class="choose-btn" for="rplExcelFile">
+                    📄 Choose RPL File
+                </label>
+
+                <input type="file" id="rplExcelFile" accept=".xlsx,.xls">
+                <div class="file-name" id="rplFileName">No file chosen</div>
+            </div>
+
+            <div class="actions">
+                <button id="rplProcessButton" onclick="processRplExcel()" disabled>
+                    🔎 Process RPL Matching
+                </button>
+                <button id="rplDownloadButton" onclick="downloadRplFile()" disabled>
+                    ⇩ Download RPL Matching Report
+                </button>
+            </div>
+
+            <div id="rplStatus" class="status">
+                ℹ️ &nbsp; Please select an RPL Excel file.
+            </div>
+
+            <div class="results" id="rplResults">
+                <div class="result-box">
+                    <span>Original Data Rows</span>
+                    <strong id="rplOriginalCount">0</strong>
+                </div>
+                <div class="result-box">
+                    <span>Final Data Rows</span>
+                    <strong id="rplFinalCount">0</strong>
+                </div>
+                <div class="result-box">
+                    <span>Duplicates Removed</span>
+                    <strong id="rplDuplicateCount">0</strong>
+                </div>
+            </div>
+
+            <div class="step2-columns">
+                <div class="step2-column"><strong>A–F</strong><span>Country, Name, RplName, Type of List, SPL Id, Legal Regulation</span></div>
+                <div class="step2-column"><strong>G</strong><span>Fuzzy matching score after normalization</span></div>
+                <div class="step2-column"><strong>H–I</strong><span>Jaro-Winkler score and the highest score from G/H</span></div>
+            </div>
+        </section>
+
+        <section class="processing-card">
+            <div class="section-title">
+                <div class="section-icon">⚙️</div>
+                <div>
+                    <h2>RPL Matching Workflow</h2>
+                    <div class="title-line"></div>
+                </div>
+            </div>
+
+            <div class="steps-grid">
+                <div class="step"><div class="step-number">1</div><div class="step-icon">📄</div><strong>Load RPL workbook</strong></div>
+                <div class="step"><div class="step-number">2</div><div class="step-icon">▤</div><strong>Find required columns</strong><small>Country, Name, RplName, Type of List, SPL Id, Legal Regulation</small></div>
+                <div class="step"><div class="step-number">3</div><div class="step-icon">🗑️</div><strong>Remove duplicates</strong><small>Country + Name + RplName + Type of List</small></div>
+                <div class="step"><div class="step-number">4</div><div class="step-icon">Aa</div><strong>Normalize names</strong><small>Case, punctuation, spaces and symbols</small></div>
+                <div class="step"><div class="step-number">5</div><div class="step-icon">🔍</div><strong>Fuzzy matching</strong><small>Score → Column G</small></div>
+                <div class="step"><div class="step-number">6</div><div class="step-icon">✨</div><strong>Jaro-Winkler</strong><small>Score → Column H</small></div>
+                <div class="step"><div class="step-number">7</div><div class="step-icon">↗</div><strong>Highest score</strong><small>MAX(G,H) → Column I</small></div>
+                <div class="step"><div class="step-number">8</div><div class="step-icon">⇩</div><strong>Download Excel</strong><small>Formatted output</small></div>
+            </div>
+        </section>
+    </div>
+
 
     <div class="footer">
         Audit TXN Daily Report Cleaner • Excel processing runs in your browser
@@ -1080,6 +1300,584 @@ function showStatus(message, type) {
         status.classList.add(type);
     }
 }
+
+/* ==================================================
+   AUDIT TOOL WORKFLOW SWITCHER
+   ================================================== */
+
+function showWorkflow(step) {
+    const step1 = document.getElementById("step1Area");
+    const step2 = document.getElementById("step2Area");
+    const card1 = document.getElementById("step1Card");
+    const card2 = document.getElementById("step2Card");
+
+    if (step === 1) {
+        step1.classList.add("active");
+        step2.classList.remove("active");
+        card1.classList.add("active");
+        card2.classList.remove("active");
+    } else {
+        step1.classList.remove("active");
+        step2.classList.add("active");
+        card1.classList.remove("active");
+        card2.classList.add("active");
+    }
+}
+
+/* ==================================================
+   STEP 2 - RPL FILE SELECTION
+   ================================================== */
+
+let rplWorkbook = null;
+let rplOriginalFileName = "RPL_Matching.xlsx";
+
+const rplFileInput = document.getElementById("rplExcelFile");
+const rplUploadBox = document.getElementById("rplUploadBox");
+
+rplFileInput.addEventListener("change", function () {
+    if (this.files.length) {
+        handleRplSelectedFile(this.files[0]);
+    }
+});
+
+["dragenter", "dragover"].forEach(eventName => {
+    rplUploadBox.addEventListener(eventName, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        rplUploadBox.classList.add("dragover");
+    });
+});
+
+["dragleave", "drop"].forEach(eventName => {
+    rplUploadBox.addEventListener(eventName, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        rplUploadBox.classList.remove("dragover");
+    });
+});
+
+rplUploadBox.addEventListener("drop", function (e) {
+    const files = e.dataTransfer.files;
+    if (!files.length) return;
+
+    const file = files[0];
+
+    if (!/\.(xlsx|xls)$/i.test(file.name)) {
+        showRplStatus("Please upload an Excel file (.xlsx or .xls).", "error");
+        return;
+    }
+
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    rplFileInput.files = transfer.files;
+
+    handleRplSelectedFile(file);
+});
+
+function handleRplSelectedFile(file) {
+    rplOriginalFileName = file.name;
+
+    document.getElementById("rplProcessButton").disabled = false;
+    document.getElementById("rplDownloadButton").disabled = true;
+    document.getElementById("rplFileName").textContent = file.name;
+    document.getElementById("rplResults").style.display = "none";
+
+    showRplStatus(
+        "✓ File selected: " + file.name +
+        "\n\nClick 'Process RPL Matching' to process it.",
+        ""
+    );
+}
+
+/* ==================================================
+   STEP 2 - NAME NORMALIZATION
+   ================================================== */
+
+function normalizeName(value) {
+    let text = value === null || value === undefined ? "" : String(value);
+
+    // Unicode normalization
+    text = text.normalize("NFKD");
+
+    // Remove combining marks / accents
+    text = text.replace(/[\u0300-\u036f]/g, "");
+
+    // Lowercase
+    text = text.toLowerCase();
+
+    // Normalize common ampersand usage
+    text = text.replace(/&/g, " and ");
+
+    // Replace punctuation and symbols with spaces
+    text = text.replace(/[^a-z0-9]+/g, " ");
+
+    // Collapse whitespace
+    text = text.replace(/\s+/g, " ").trim();
+
+    return text;
+}
+
+/* ==================================================
+   STEP 2 - LEVENSHTEIN / FUZZY SCORE
+   ================================================== */
+
+function levenshteinDistance(a, b) {
+    const s = String(a);
+    const t = String(b);
+
+    if (s === t) return 0;
+    if (!s.length) return t.length;
+    if (!t.length) return s.length;
+
+    let previous = new Array(t.length + 1);
+    let current = new Array(t.length + 1);
+
+    for (let j = 0; j <= t.length; j++) {
+        previous[j] = j;
+    }
+
+    for (let i = 1; i <= s.length; i++) {
+        current[0] = i;
+
+        for (let j = 1; j <= t.length; j++) {
+            const cost = s[i - 1] === t[j - 1] ? 0 : 1;
+
+            current[j] = Math.min(
+                current[j - 1] + 1,
+                previous[j] + 1,
+                previous[j - 1] + cost
+            );
+        }
+
+        const temp = previous;
+        previous = current;
+        current = temp;
+    }
+
+    return previous[t.length];
+}
+
+function fuzzyRatio(a, b) {
+    if (!a && !b) return 1;
+    if (!a || !b) return 0;
+
+    const distance = levenshteinDistance(a, b);
+    return Math.max(0, 1 - distance / Math.max(a.length, b.length));
+}
+
+/* Token-aware fuzzy comparison:
+   compares the direct normalized strings and the alphabetically
+   sorted-token strings, then keeps the stronger score. */
+function tokenSortFuzzyRatio(a, b) {
+    const direct = fuzzyRatio(a, b);
+
+    const sortedA = a.split(" ").filter(Boolean).sort().join(" ");
+    const sortedB = b.split(" ").filter(Boolean).sort().join(" ");
+
+    const tokenSorted = fuzzyRatio(sortedA, sortedB);
+
+    return Math.max(direct, tokenSorted);
+}
+
+/* ==================================================
+   STEP 2 - JARO-WINKLER
+   ================================================== */
+
+function jaroSimilarity(s1, s2) {
+    if (s1 === s2) return 1;
+    if (!s1 || !s2) return 0;
+
+    const a = String(s1);
+    const b = String(s2);
+
+    const maxDistance = Math.floor(Math.max(a.length, b.length) / 2) - 1;
+
+    if (maxDistance < 0) return 0;
+
+    const aMatch = new Array(a.length).fill(false);
+    const bMatch = new Array(b.length).fill(false);
+
+    let matches = 0;
+
+    for (let i = 0; i < a.length; i++) {
+        const start = Math.max(0, i - maxDistance);
+        const end = Math.min(i + maxDistance + 1, b.length);
+
+        for (let j = start; j < end; j++) {
+            if (bMatch[j] || a[i] !== b[j]) continue;
+
+            aMatch[i] = true;
+            bMatch[j] = true;
+            matches++;
+            break;
+        }
+    }
+
+    if (matches === 0) return 0;
+
+    const aMatched = [];
+    const bMatched = [];
+
+    for (let i = 0; i < a.length; i++) {
+        if (aMatch[i]) aMatched.push(a[i]);
+    }
+
+    for (let j = 0; j < b.length; j++) {
+        if (bMatch[j]) bMatched.push(b[j]);
+    }
+
+    let transpositions = 0;
+
+    for (let i = 0; i < aMatched.length; i++) {
+        if (aMatched[i] !== bMatched[i]) {
+            transpositions++;
+        }
+    }
+
+    transpositions /= 2;
+
+    return (
+        (matches / a.length) +
+        (matches / b.length) +
+        ((matches - transpositions) / matches)
+    ) / 3;
+}
+
+function jaroWinklerSimilarity(s1, s2) {
+    const jaro = jaroSimilarity(s1, s2);
+
+    if (jaro <= 0.7) return jaro;
+
+    const prefixLimit = 4;
+    let prefix = 0;
+
+    for (let i = 0; i < Math.min(prefixLimit, s1.length, s2.length); i++) {
+        if (s1[i] === s2[i]) {
+            prefix++;
+        } else {
+            break;
+        }
+    }
+
+    return jaro + prefix * 0.1 * (1 - jaro);
+}
+
+/* ==================================================
+   STEP 2 - FIND REQUIRED COLUMNS
+   ================================================== */
+
+function canonicalHeader(value) {
+    return normalizeName(value).replace(/\s/g, "");
+}
+
+function findHeaderIndex(headers, candidates) {
+    const normalizedHeaders = headers.map(canonicalHeader);
+
+    for (const candidate of candidates) {
+        const target = canonicalHeader(candidate);
+        const index = normalizedHeaders.indexOf(target);
+
+        if (index !== -1) return index;
+    }
+
+    return -1;
+}
+
+/* ==================================================
+   STEP 2 - PROCESS RPL EXCEL
+   ================================================== */
+
+function processRplExcel() {
+    if (!rplFileInput.files.length) {
+        showRplStatus("Please select an RPL Excel file first.", "error");
+        return;
+    }
+
+    const file = rplFileInput.files[0];
+
+    showRplStatus(
+        "⏳ Processing RPL file...\nPlease wait while the names are normalized and matched.",
+        ""
+    );
+
+    const processButton = document.getElementById("rplProcessButton");
+    processButton.disabled = true;
+
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+
+            const workbook = XLSX.read(data, {
+                type: "array",
+                cellDates: true
+            });
+
+            const sheetName = workbook.SheetNames[0];
+
+            if (!sheetName) {
+                throw new Error("The RPL Excel file does not contain a worksheet.");
+            }
+
+            const worksheet = workbook.Sheets[sheetName];
+
+            const rows = XLSX.utils.sheet_to_json(worksheet, {
+                header: 1,
+                defval: ""
+            });
+
+            if (!rows.length) {
+                throw new Error("The RPL Excel file is empty.");
+            }
+
+            const headers = rows[0].map(value => String(value ?? "").trim());
+
+            // Required headers. Header matching is case/punctuation tolerant.
+            const countryIndex = findHeaderIndex(headers, ["Country"]);
+            const nameIndex = findHeaderIndex(headers, ["Name"]);
+            const rplNameIndex = findHeaderIndex(headers, ["RplName", "RPL Name", "Rpl Name"]);
+            const typeIndex = findHeaderIndex(headers, ["Type of List", "TypeOfList"]);
+            const splIdIndex = findHeaderIndex(headers, ["SPL Id", "SPL ID", "SPLID"]);
+            const legalIndex = findHeaderIndex(headers, ["Legal Regulation", "LegalRegulation"]);
+
+            const missing = [];
+
+            if (countryIndex === -1) missing.push("Country");
+            if (nameIndex === -1) missing.push("Name");
+            if (rplNameIndex === -1) missing.push("RplName");
+            if (typeIndex === -1) missing.push("Type of List");
+            if (splIdIndex === -1) missing.push("SPL Id");
+            if (legalIndex === -1) missing.push("Legal Regulation");
+
+            if (missing.length) {
+                throw new Error(
+                    "Required column(s) not found:\n" +
+                    missing.join(", ") +
+                    "\n\nPlease check the RPL input file headers."
+                );
+            }
+
+            const outputRows = [];
+            const seen = new Set();
+
+            let duplicateCount = 0;
+
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i] || [];
+
+                const country = row[countryIndex] ?? "";
+                const name = row[nameIndex] ?? "";
+                const rplName = row[rplNameIndex] ?? "";
+                const typeOfList = row[typeIndex] ?? "";
+                const splId = row[splIdIndex] ?? "";
+                const legalRegulation = row[legalIndex] ?? "";
+
+                // Duplicate criteria:
+                // Country + Name + RplName + Type of List
+                const duplicateKey = [
+                    normalizeName(country),
+                    normalizeName(name),
+                    normalizeName(rplName),
+                    normalizeName(typeOfList)
+                ].join("|||");
+
+                if (seen.has(duplicateKey)) {
+                    duplicateCount++;
+                    continue;
+                }
+
+                seen.add(duplicateKey);
+
+                // Normalize only for matching; original values remain visible.
+                const normalizedName = normalizeName(name);
+                const normalizedRplName = normalizeName(rplName);
+
+                const fuzzy = tokenSortFuzzyRatio(
+                    normalizedName,
+                    normalizedRplName
+                );
+
+                const jaroWinkler = jaroWinklerSimilarity(
+                    normalizedName,
+                    normalizedRplName
+                );
+
+                const highest = Math.max(fuzzy, jaroWinkler);
+
+                outputRows.push([
+                    country,
+                    name,
+                    rplName,
+                    typeOfList,
+                    splId,
+                    legalRegulation,
+                    Number(fuzzy.toFixed(4)),
+                    Number(jaroWinkler.toFixed(4)),
+                    Number(highest.toFixed(4))
+                ]);
+            }
+
+            const outputHeaders = [
+                "Country",
+                "Name",
+                "RplName",
+                "Type of List",
+                "SPL Id",
+                "Legal Regulation",
+                "Fuzzy Match",
+                "Jaro-Winkler",
+                "Highest Score"
+            ];
+
+            const finalRows = [outputHeaders, ...outputRows];
+
+            const newWorksheet = XLSX.utils.aoa_to_sheet(finalRows);
+
+            // Excel table-like presentation: filters, widths and formatted headers.
+            newWorksheet["!autofilter"] = {
+                ref: "A1:I" + Math.max(1, finalRows.length)
+            };
+
+            newWorksheet["!cols"] = [
+                { wch: 13 },
+                { wch: 30 },
+                { wch: 30 },
+                { wch: 20 },
+                { wch: 16 },
+                { wch: 28 },
+                { wch: 15 },
+                { wch: 17 },
+                { wch: 15 }
+            ];
+
+            // Try to create a structured Excel Table when supported by the
+            // installed SheetJS build; AutoFilter remains as a fallback.
+            if (finalRows.length > 1) {
+                newWorksheet["!tables"] = [{
+                    name: "RPLMatchingTable",
+                    ref: "A1:I" + finalRows.length,
+                    displayName: "RPLMatchingTable",
+                    headerRow: true,
+                    totalsRow: false
+                }];
+            }
+
+            // Header formatting if supported by the browser build.
+            for (let c = 0; c < outputHeaders.length; c++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: 0, c: c });
+
+                if (newWorksheet[cellAddress]) {
+                    newWorksheet[cellAddress].s = {
+                        font: { bold: true },
+                        alignment: { horizontal: "center", vertical: "center" }
+                    };
+                }
+            }
+
+            const newWorkbook = XLSX.utils.book_new();
+
+            XLSX.utils.book_append_sheet(
+                newWorkbook,
+                newWorksheet,
+                "RPL Matching"
+            );
+
+            rplWorkbook = newWorkbook;
+
+            const originalRows = rows.length - 1;
+            const finalCount = outputRows.length;
+
+            document.getElementById("rplOriginalCount").textContent =
+                originalRows.toLocaleString();
+
+            document.getElementById("rplFinalCount").textContent =
+                finalCount.toLocaleString();
+
+            document.getElementById("rplDuplicateCount").textContent =
+                duplicateCount.toLocaleString();
+
+            document.getElementById("rplResults").style.display = "grid";
+            document.getElementById("rplDownloadButton").disabled = false;
+
+            showRplStatus(
+                "✓ RPL matching completed successfully!\n\n" +
+                "Columns kept: Country, Name, RplName, Type of List, SPL Id, Legal Regulation\n" +
+                "Duplicates removed using: Country + Name + RplName + Type of List\n" +
+                "Name normalization: applied internally before matching\n" +
+                "Fuzzy score: Column G\n" +
+                "Jaro-Winkler score: Column H\n" +
+                "Highest score: Column I\n\n" +
+                "Your RPL matching report is ready to download.",
+                "success"
+            );
+        }
+        catch (error) {
+            console.error(error);
+
+            showRplStatus(
+                "Error processing the RPL Excel file:\n\n" +
+                error.message,
+                "error"
+            );
+        }
+        finally {
+            processButton.disabled = false;
+        }
+    };
+
+    reader.onerror = function () {
+        processButton.disabled = false;
+        showRplStatus("Unable to read the RPL Excel file.", "error");
+    };
+
+    reader.readAsArrayBuffer(file);
+}
+
+/* ==================================================
+   STEP 2 - DOWNLOAD
+   ================================================== */
+
+function downloadRplFile() {
+    if (!rplWorkbook) {
+        showRplStatus(
+            "Please process the RPL Excel file first.",
+            "error"
+        );
+        return;
+    }
+
+    const outputFileName =
+        rplOriginalFileName.replace(
+            /\.(xlsx|xls)$/i,
+            ""
+        ) +
+        "_RPL_Matching.xlsx";
+
+    XLSX.writeFile(rplWorkbook, outputFileName);
+
+    showRplStatus(
+        "✓ Download started!\n\n" +
+        outputFileName,
+        "success"
+    );
+}
+
+/* ==================================================
+   STEP 2 - STATUS
+   ================================================== */
+
+function showRplStatus(message, type) {
+    const status = document.getElementById("rplStatus");
+
+    status.textContent = message;
+    status.className = "status";
+
+    if (type) {
+        status.classList.add(type);
+    }
+}
+
 </script>
 
 </body>
